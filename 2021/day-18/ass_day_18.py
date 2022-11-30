@@ -4,6 +4,7 @@ import math
 import ast
 _ST = get_timer()
 
+
 def to_tree(_root_node, data):
     left = data[0]
     right = data[1]
@@ -13,15 +14,17 @@ def to_tree(_root_node, data):
     _node.right = IntWrapper(right) if isinstance(right, int) else to_tree(_node, right)
     return _node
 
+
 class IntWrapper:
     def __init__(self, v):
         self.v = v
 
     def __str__(self):
-        return  str(self.v)
+        return str(self.v)
 
     def __repr__(self):
         return str(self.v)
+
 
 class Node():
     def __init__(self, value=None, left=None, right=None, parent=None):
@@ -42,6 +45,9 @@ class Node():
     def isrint(self):
         return isinstance(self.right, IntWrapper)
 
+    """
+        From your parent, go up until we've found a node with 
+    """
     def find_first_left(self):
         p = self
 
@@ -153,19 +159,24 @@ class Node():
         return str([self.left, self.right])
 
 
-f = open("ass_day_18_input.txt", "r")
-commands = Parser.split_by(f.read(), "\n", conv_func=None)  # lambda x:int(x)
-numbers = [ast.literal_eval(x) for x in commands]
+def main():
+    f = open("ass_day_18_input.txt", "r")
+    commands = Parser.split_by(f.read(), "\n", conv_func=None)  # lambda x:int(x)
+    numbers = [ast.literal_eval(x) for x in commands]
 
-# Sum up all
-current = to_tree(None, numbers[0])
-for next_to_add in numbers[1:]:
-    tree = to_tree(None, [current.to_list(), next_to_add])
+    # Sum up all
+    current = to_tree(None, numbers[0])
+    for next_to_add in numbers[1:]:
+        tree = to_tree(None, [current.to_list(), next_to_add])
 
-    changed = True
-    while changed:
-        tree, changed = tree.reduce()
-    current = tree
+        changed = True
+        while changed:
+            tree, changed = tree.reduce()
+        current = tree
 
-panswer(current.get_magnitude())
+    panswer(current.get_magnitude())
+
+
+main()
 pruntime(_ST)
+# 3486
