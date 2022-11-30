@@ -1,14 +1,21 @@
 from utils import Grid
-
+import copy
 
 class ExpandingGrid(Grid):
 
-    def __init__(self, width, height, default_value=0):
-        self._default_value = default_value
-        super().__init__([([self._default_value] * width) for i in range(height)])
+    def __init__(self, *args, **kwargs):
+        self._default_value = kwargs['default_value'] if 'default_value' in kwargs else 0
+        if isinstance(args[0], list):
+            super().__init__(args[0])
+        elif isinstance(args[0], int) and isinstance(args[1], int):
+            super().__init__([([self._default_value] * args[0]) for i in range(args[1])])
 
     def set_default_value(self, default_value):
         self._default_value = default_value
+
+    @property
+    def default_value(self):
+        return self._default_value
 
     def expand_with(self, wdiff, hdiff):
         if wdiff > 0:
@@ -61,3 +68,6 @@ class ExpandingGrid(Grid):
         col_idx, row_idx = max(0, col_idx), max(0, row_idx)
         super().substract_at(col_idx, row_idx, val)
         return col_idx, row_idx
+
+    def get_copy(self):
+        return ExpandingGrid(copy.deepcopy(self._grid), self._default_value)

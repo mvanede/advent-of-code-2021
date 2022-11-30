@@ -14,12 +14,16 @@ class NoLeastCommonException(Exception):
 class Grid:
     _grid = [[]]
 
-    def __init__(self, grid: [[]]):
-        self._grid = copy.deepcopy(grid)
+    def __init__(self, *args, **kwargs):
+        if isinstance(args[0], list):
+            self._grid = copy.deepcopy(args[0])
+        elif isinstance(args[0], int) and isinstance(args[1], int):
+            self._default_value = kwargs['default_value'] if 'default_value' in kwargs else 0
+            super().__init__([([self._default_value] * args[0]) for i in range(args[1])])
 
     @classmethod
     def init_with(cls, width, height, default_value=None):
-        return cls([[default_value] * (width + 1) for i in range(height + 1)])
+        return cls([[default_value] * width for i in range(height)])
 
     @property
     def grid(self):
@@ -49,30 +53,35 @@ class Grid:
                 retval[(col_idx, row_idx)] = self.get(col_idx, row_idx)
         return retval
 
+    def cells_where(self, where_func):
+        retval = {}
+        for row_idx in range(0, self.height):
+            for col_idx in range(0, self.width):
+                if where_func(self.get(col_idx, row_idx)):
+                    retval[(col_idx, row_idx)] = self.get(col_idx, row_idx)
+        return retval
+
     """
     GET methods
     """
 
     def get(self, col_idx: int, row_idx: int):
-       return self._grid[row_idx][col_idx]
+        return self._grid[row_idx][col_idx]
 
     def get_row(self, row_idx: int):
         return self._grid[row_idx]
 
-    def get_rows(self, start_idx: int, end_idx:int):
+    def get_rows(self, start_idx: int, end_idx: int):
         return self._grid[start_idx:end_idx]
 
     def get_col(self, col_idx: int):
         return [row[col_idx] for row in self._grid]
-        # return list(list(zip(*self._grid))[col_idx])
 
-    def get_cols(self, start_idx: int, end_idx:int):
+    def get_cols(self, start_idx: int, end_idx: int):
         return [row[start_idx:end_idx] for row in self._grid]
 
     def get_copy(self):
         return Grid(copy.deepcopy(self._grid))
-
-
 
     """
     MOST AND LEAST COMMON methods
@@ -136,10 +145,10 @@ class Grid:
     def flip_vertical(self):
         return self.flip_horizontal().rotate_cw().rotate_cw()
 
-
     """
     SUM AND PRODUCT methods
     """
+
     def get_row_sum(self, row_idx):
         return sum([int(i) for i in self.get_row(row_idx)])
 
@@ -161,15 +170,15 @@ class Grid:
     def get_prod(self):
         return math.prod(self.flatten())
 
-    def add_at(self, col_idx:int, row_idx:int, val):
+    def add_at(self, col_idx: int, row_idx: int, val):
         self._grid[row_idx][col_idx] += val
         return self
 
-    def substract_at(self, col_idx:int, row_idx:int, val):
+    def substract_at(self, col_idx: int, row_idx: int, val):
         self._grid[row_idx][col_idx] -= val
         return self
 
-    def add_all(self, add_val, conv_func = None):
+    def add_all(self, add_val, conv_func=None):
         for col, row in self.cells.keys():
             v = self.get(col, row) + add_val
             if conv_func:
@@ -177,20 +186,30 @@ class Grid:
             self.set(col, row, v)
 
     """
-    REPLACE andd SET methods
+    REPLACE and SET methods
     """
-    def set(self, col_idx:int, row_idx:int, new_val):
+
+    def set(self, col_idx: int, row_idx: int, new_val):
         self._grid[row_idx][col_idx] = new_val
         return self
 
-    def replace_in_row(self, row_idx:int, old_val, new_val):
+    def replace_in_row(self, row_idx: int, old_val, new_val):
         self._grid[row_idx] = [new_val if i == old_val else i for i in self._grid[row_idx]]
         return self
 
-    def replace_in_col(self, col_idx:int, old_val, new_val):
+    def set_in_row(self, row_idx: int, new_val):
+        self._grid[row_idx] = [new_val for i in self._grid[row_idx]]
+        return self
+
+    def replace_in_col(self, col_idx: int, old_val, new_val):
         for row in self._grid:
             if row[col_idx] == old_val:
                 row[col_idx] = new_val
+        return self
+
+    def set_in_col(self, col_idx: int, new_val):
+        for row in self._grid:
+            row[col_idx] = new_val
         return self
 
     def replace_all(self, old_val, new_val):
@@ -208,18 +227,19 @@ class Grid:
     """
     FINDING AND ADJACENT
     """
-    def get_adjacent(self, col_idx:int, row_idx:int, include_diagonal=True):
+
+    def get_adjacent(self, col_idx: int, row_idx: int, include_diagonal=True, include_self=False):
         ret = {}
         for pos_row in range(max(row_idx - 1, 0), min(row_idx + 2, self.height)):
             for pos_col in range(max(col_idx - 1, 0), min(col_idx + 2, self.width)):
-                if pos_row == row_idx and pos_col == col_idx:
+                if not include_self and (pos_row == row_idx and pos_col == col_idx):
                     continue
                 if not include_diagonal and not (pos_row == row_idx or pos_col == col_idx):
                     continue
                 ret[(pos_col, pos_row)] = self.get(pos_col, pos_row)
         return ret
 
-    def get_adjacent_bottom_right(self, col_idx:int, row_idx:int, include_diagonal=True):
+    def get_adjacent_bottom_right(self, col_idx: int, row_idx: int, include_diagonal=True):
         ret = {}
         for pos_row in range(max(row_idx, 0), min(row_idx + 2, self.height)):
             for pos_col in range(max(col_idx, 0), min(col_idx + 2, self.width)):
@@ -231,7 +251,8 @@ class Grid:
         return ret
 
     def find_all(self, val):
-        return [(idx_col, idx_row) for idx_row, row in enumerate(self._grid) for idx_col, y in enumerate(row) if val == y]
+        return [(idx_col, idx_row) for idx_row, row in enumerate(self._grid) for idx_col, y in enumerate(row) if
+                val == y]
 
     def get_uniq_values(self):
         return list(set(self.flatten()))
@@ -255,18 +276,23 @@ class Grid:
     MERGE
     """
 
-
     """
     ETC
     """
+
     def print(self, sep='\n'):
         print(*self._grid, sep=sep)
+        print("")
 
     def pprint(self, sep='', end=''):
         for row in self.rows:
             for col in row:
-                print (sep.join(str(col)), end=end)
+                print(sep.join(str(col)), end=end)
             print("")
+        print("")
 
     def flatten(self):
         return [el for row in self._grid for el in row]
+
+    def __str__(self):
+        return str(self.flatten())

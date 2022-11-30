@@ -3,10 +3,19 @@ import timeit
 depth_of_nested_lists = lambda L: isinstance(L, list) and max(map(depth_of_nested_lists, L)) + 1
 
 
-flatten_nested_lists = lambda x: [i for e in x for i in (flatten_nested_lists(e) if isinstance(e, list) else [e])]
+def flatten_nested_lists(L):
+    for l in L:
+        if isinstance(l, list):
+            yield from flatten_nested_lists(l)
+        else:
+            yield l
+
+max_in_list = lambda lst: max(list(flatten_nested_lists(lst)))
 
 
-max_in_list = lambda lst: max(flatten_nested_lists(lst))
+def int_to_bits(i, len=None):
+    bits =  str(bin(i))[2:]
+    return bits.rjust(len, '0') if len else bits
 
 
 def get_timer():
@@ -14,7 +23,7 @@ def get_timer():
 
 
 def pruntime(start_timer):
-    print('Finished in {:.5f}ms'.format(timeit.default_timer() - start_timer))
+    print('Finished in {:.5f}s'.format(timeit.default_timer() - start_timer))
 
 
 def panswer(a):
